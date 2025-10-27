@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Interactivo: Manejo de Fuentes Humanas</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Carga de Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Configuración del font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a1a;
+            color: #F9FAFB;
+        }
+
+        /* Fondo Animado */
+        @keyframes moveGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .animated-bg {
+            background: radial-gradient(circle at 10% 20%, rgba(58, 129, 246, 0.3), transparent 40%),
+                        radial-gradient(circle at 80% 90%, rgba(139, 92, 246, 0.3), transparent 40%),
+                        radial-gradient(circle at 50% 50%, rgba(20, 184, 166, 0.2), transparent 50%);
+            background-color: #0a0a1a;
+            background-size: 400% 400%;
+            animation: moveGradient 20s ease-in-out infinite;
+        }
+
+        /* Estilo Glassmorphism */
+        .glass-card {
+            background-color: rgba(10, 10, 26, 0.65);
+            backdrop-filter: blur(14px) saturate(160%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        /* --- NUEVO: Animaciones de Entrada --- */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideInBottom {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+            opacity: 0;
+        }
+        .animate-slide-in-bottom {
+            animation: slideInBottom 0.6s ease-out forwards;
+            opacity: 0;
+        }
+
+        /* --- NUEVO: Estilo Tarjetas Concepto (con scroll H) --- */
+        .concept-card {
+            background-color: rgba(17, 24, 39, 0.7);
+            border: 1px solid rgba(55, 65, 81, 0.5);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            transition: all 0.3s ease;
+            height: 100%;
+            /* Para scroll horizontal en móvil */
+            width: 260px; /* Ancho fijo para scroll */
+            flex-shrink: 0; /* Evita que se encoja */
+        }
+        .concept-card:hover {
+            background-color: rgba(17, 24, 39, 0.9);
+            border-color: rgba(59, 130, 246, 0.7);
+            transform: translateY(-4px) scale(1.02); /* Efecto hover mejorado */
+        }
+        /* En pantallas medianas (md) y superiores, vuelve a ser grid */
+        @media (min-width: 768px) {
+            .concept-card {
+                width: auto; /* Ancho automático para grid */
+            }
+        }
+
+        /* --- NUEVO: Estilos de Pestañas (Tabs) --- */
+        .tab-btn {
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            color: #9CA3AF; /* gray-400 */
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .tab-btn:hover {
+            color: #F9FAFB; /* gray-50 */
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .tab-btn.active {
+            color: #3B82F6; /* blue-500 */
+            border-bottom-color: #3B82F6;
+        }
+        .tab-content.hidden {
+            display: none;
+        }
+
+        /* Estilos Acordeón (Sin cambios) */
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.7s ease-in-out;
+        }
+        .accordion-item.expanded .accordion-content {
+            max-height: 2500px;
+        }
+        .accordion-chevron {
+            transition: transform 0.5s ease-in-out;
+        }
+        .accordion-item.expanded .accordion-chevron {
+            transform: rotate(180deg);
+        }
+
+        /* Estilos de 'Pills' y Ejemplos (Sin cambios) */
+        .accordion-content ul { list-style-type: none; padding-left: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+        .concept-pill { display: flex; align-items: center; gap: 0.75rem; background-color: rgba(31, 41, 55, 0.6); padding: 0.75rem 1rem; border-radius: 0.5rem; border-left: 4px solid #3b82f6; transition: background-color 0.2s ease; }
+        .concept-pill:hover { background-color: rgba(31, 41, 55, 0.9); }
+        .example-box { background-color: rgba(10, 10, 26, 0.7); border-left: 4px solid #10b981; border-radius: 0.5rem; padding: 1rem; margin-top: 1rem; margin-bottom: 1rem; }
+        .example-box-title { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 1.125rem; color: #10b981; margin-bottom: 0.5rem; }
+        
+        /* Estilo Glosario */
+        .glosario-termino {
+            font-weight: 700;
+            color: #3B82F6; /* azul */
+        }
+        .glosario-definicion {
+            padding-left: 1.5rem; /* sangría */
+            color: #D1D5DB; /* gray-300 */
+        }
+
+    </style>
+</head>
+<body class="overflow-x-hidden"> <!-- Evita scroll H en el body -->
+    <div class="relative min-h-screen text-gray-200 p-4 sm:p-6 md:p-8 font-sans">
+        <!-- Fondo animado -->
+        <div class="absolute inset-0 -z-10 h-full w-full animated-bg"></div>
+
+        <div class="relative max-w-7xl mx-auto px-0 sm:px-6 lg:px-8">
+            <!-- Encabezado del Módulo -->
+            <header class="glass-card mb-12 p-8 text-center animate-fade-in">
+                <!-- Logos -->
+                <div class="flex justify-center items-center gap-x-8 mb-6">
+                    <img
+                        src="https://github.com/Danny20251992/Protocolo-final/blob/main/img/images.png?raw=true"
+                        alt="Escudo Policía Nacional del Ecuador"
+                        class="h-20 md:h-24 object-contain transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(58,129,246,0.6)] hover:drop-shadow-[0_0_16px_rgba(58,129,246,1)] hover:scale-105"
+                        onerror="this.onerror=null; this.src='https://placehold.co/96x96/1f2937/ffffff?text=PNE';"
+                    />
+                    <img
+                        src="https://github.com/Danny20251992/Protocolo-final/blob/main/img/DIGIN_logo-removebg-preview.png?raw=true"
+                        alt="Logo DIGIN"
+                        class="h-20 md:h-24 object-contain transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(139,92,246,0.6)] hover:drop-shadow-[0_0_16px_rgba(139,92,246,1)] hover:scale-105"
+                        onerror="this.onerror=null; this.src='https://placehold.co/96x96/1f2937/ffffff?text=DIGIN';"
+                    />
+                </div>
+                <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-blue-400 to-violet-400 mb-2">
+                    Manejo y Reclutamiento de Fuentes Humanas
+                </h1>
+                <p class="text-base md:text-lg text-gray-300 font-medium mt-2">
+                    V Curso Nacional y III Internacional de Búsqueda y Captura.
+                </p>
+            </header>
+
+            <!-- Conceptos Clave del Módulo (Scroll Horizontal en Móvil) -->
+            <section id="conceptos-clave" class="mb-12">
+                <h2 class="text-2xl md:text-3xl font-extrabold text-center mb-6 text-gray-100 animate-fade-in" style="animation-delay: 100ms;">
+                    Conceptos Clave del Módulo
+                </h2>
+                <!-- Contenedor de Scroll/Grid -->
+                <div class="flex overflow-x-auto space-x-4 p-4 md:grid md:grid-cols-2 lg:grid-cols-4 md:space-x-0 md:gap-6">
+                    <!-- Card 1: Ciclo AFH -->
+                    <div class="concept-card animate-slide-in-bottom" style="animation-delay: 200ms;">
+                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-600/30 mb-4">
+                            <i data-lucide="refresh-cw" class="w-6 h-6 text-blue-400"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2">El Ciclo AFH</h3>
+                        <p class="text-sm text-gray-400">Es un CICLO continuo: Exploración, Aproximación, Registro y Entrenamiento se retroalimentan constantemente.</p>
+                    </div>
+                    <!-- Card 2: Motivación -->
+                    <div class="concept-card animate-slide-in-bottom" style="animation-delay: 300ms;">
+                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-yellow-600/30 mb-4">
+                            <i data-lucide="heart-crack" class="w-6 h-6 text-yellow-400"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2">La Motivación</h3>
+                        <p class="text-sm text-gray-400">Es la LLAVE del reclutamiento. Entender el "por qué" (Venganza, Dinero, Ideología) permite al administrador mantener el control.</p>
+                    </div>
+                    <!-- Card 3: La Entrevista -->
+                    <div class="concept-card animate-slide-in-bottom" style="animation-delay: 400ms;">
+                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-red-600/30 mb-4">
+                            <i data-lucide="mic-vim" class="w-6 h-6 text-red-400"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2">La Entrevista Estratégica</h3>
+                        <p class="text-sm text-gray-400">NO es un interrogatorio. Es una conversación controlada. El silencio, el eco y la confrontación son herramientas, no armas.</p>
+                    </div>
+                    <!-- Card 4: Legalidad y Ética -->
+                    <div class="concept-card animate-slide-in-bottom" style="animation-delay: 500ms;">
+                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-teal-600/30 mb-4">
+                            <i data-lucide="shield-check" class="w-6 h-6 text-teal-400"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2">Legalidad y Ética</h3>
+                        <p class="text-sm text-gray-400">La información obtenida fuera del marco legal es NULA. La ética y el respeto a los DD.HH. garantizan la validez probatoria.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- NUEVO: Contenedor Principal de Pestañas (Tabs) -->
+            <section id="main-content" class="glass-card p-4 sm:p-6 md:p-8 animate-fade-in" style="animation-delay: 600ms;">
+                <!-- Botones de Pestañas -->
+                <div class="flex border-b border-gray-700/50 mb-6 overflow-x-auto">
+                    <button id="btn-temario" class="tab-btn flex items-center gap-2" onclick="showTab('temario')">
+                        <i data-lucide="book-open" class="w-4 h-4"></i> Temario del Módulo
+                    </button>
+                    <button id="btn-faq" class="tab-btn flex items-center gap-2" onclick="showTab('faq')">
+                        <i data-lucide="help-circle" class="w-4 h-4"></i> Preguntas Frecuentes (FAQ)
+                    </button>
+                    <button id="btn-glosario" class="tab-btn flex items-center gap-2" onclick="showTab('glosario')">
+                        <i data-lucide="book" class="w-4 h-4"></i> Glosario de Términos
+                    </button>
+                </div>
+
+                <!-- Contenido de Pestaña 1: TEMARIO -->
+                <div id="temario" class="tab-content">
+                    <div class="space-y-3 text-left">
+                        <!-- Acordeón: Introducción y Objetivos -->
+                        <div class="accordion-item bg-gray-900/50 rounded-lg border border-gray-700/50 overflow-hidden animate-fade-in" style="animation-delay: 700ms;">
+                            <button onclick="toggleAccordion(this)" class="w-full p-4 flex justify-between items-center text-md font-semibold text-gray-200 hover:bg-gray-800/50 transition-colors">
+                                <span class="flex items-center gap-2 text-left"><i data-lucide="target" class="w-5 h-5 text-teal-400 flex-shrink-0"></i>Introducción y Objetivos del Módulo</span>
+                                <i data-lucide="chevron-down" class="accordion-chevron w-5 h-5 transition-transform flex-shrink-0"></i>
+                            </button>
+                            <div class="accordion-content">
+                                <div class="p-4 text-sm text-gray-300 border-t border-gray-700/50 space-y-4">
+                                    <p>La Administración de Fuentes Humanas (AFH) y la Entrevista Policial constituyen ejes estratégicos de la Inteligencia Humana (HUMINT). Este módulo ofrece una guía técnica para fortalecer las capacidades del personal policial...</p>
+                                    <h4 class="font-semibold text-base text-gray-100">Objetivo General</h4>
+                                    <p>Formar al personal policial en metodologías, procedimientos y técnicas especializadas de la AFH y de la Entrevista Policial, fortaleciendo sus capacidades para recolectar, procesar y validar información...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Acordeón: Capítulo 1 -->
+                        <div class="accordion-item bg-gray-900/50 rounded-lg border border-gray-700/50 overflow-hidden animate-fade-in" style="animation-delay: 800ms;">
+                            <button onclick="toggleAccordion(this)" class="w-full p-4 flex justify-between items-center text-md font-semibold text-gray-200 hover:bg-gray-800/50 transition-colors">
+                                <span class="flex items-center gap-2 text-left"><i data-lucide="users" class="w-5 h-5 text-blue-400 flex-shrink-0"></i>CAP. I: Administración y Clasificación de Fuentes</span>
+                                <i data-lucide="chevron-down" class="accordion-chevron w-5 h-5 transition-transform flex-shrink-0"></i>
+                            </button>
+                            <div class="accordion-content">
+                                <div class="p-4 text-sm text-gray-300 border-t border-gray-700/50 space-y-4">
+                                    <h4 class="font-semibold text-base text-gray-100 mb-2">Clasificación por Motivación</h4>
+                                    <ul>
+                                        <li class="concept-pill" style="border-left-color: #3b82f6;"><i data-lucide="dollar-sign" class="w-5 h-5 text-blue-400"></i><div><strong>Interés Económico:</strong> Busca remuneración.</div></li>
+                                        <li class="concept-pill" style="border-left-color: #ef4444;"><i data-lucide="heart-crack" class="w-5 h-5 text-red-400"></i><div><strong>Emocional (Venganza):</strong> Aporta por odio, ira o despecho.</div></li>
+                                        <li class="concept-pill" style="border-left-color: #10b981;"><i data-lucide="flag" class="w-5 h-5 text-teal-400"></i><div><strong>Patriotismo / Ideológica:</strong> Por convicciones o pertenencia.</div></li>
+                                        <li class="concept-pill" style="border-left-color: #f59e0b;"><i data-lucide="gavel" class="w-5 h-5 text-yellow-400"></i><div><strong>Interés Personal:</strong> Busca beneficios jurídicos o protección.</div></li>
+                                    </ul>
+                                    <div class="example-box">
+                                        <div class="example-box-title"><i data-lucide="lightbulb" class="w-5 h-5"></i>Ejemplo Didáctico: Motivación</div>
+                                        <p class="text-sm">Un agente identifica que el contador de una organización criminal tiene un hijo enfermo (Motivación: <strong>Económico</strong>) y fue humillado por su jefe (Motivación: <strong>Venganza</strong>). El agente usará ambas.</p>
+                                    </div>
+                                    <h4 class="font-semibold text-base text-gray-100 mb-2 mt-6">¡Alerta! El Traficante de Información</h4>
+                                    <div class="concept-pill" style="border-left-color: #a855f7;"><i data-lucide="alert-triangle" class="w-5 h-5 text-violet-400"></i><div><strong>Definición:</strong> Construye información falsa para obtener beneficios, desperdiciando recursos.</div></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Acordeón: Capítulo 2 -->
+                        <div class="accordion-item bg-gray-900/50 rounded-lg border border-gray-700/50 overflow-hidden animate-fade-in" style="animation-delay: 900ms;">
+                            <button onclick="toggleAccordion(this)" class="w-full p-4 flex justify-between items-center text-md font-semibold text-gray-200 hover:bg-gray-800/50 transition-colors">
+                                <span class="flex items-center gap-2 text-left"><i data-lucide="refresh-cw" class="w-5 h-5 text-yellow-400 flex-shrink-0"></i>CAP. II: Etapas para la Administración (Ciclo AFH)</span>
+                                <i data-lucide="chevron-down" class="accordion-chevron w-5 h-5 transition-transform flex-shrink-0"></i>
+                            </button>
+                            <div class="accordion-content">
+                                <div class="p-4 text-sm text-gray-300 border-t border-gray-700/50 space-y-4">
+                                    <ul>
+                                        <li class="concept-pill" style="border-left-color: #3b82f6;"><i data-lucide="search" class="w-5 h-5 text-blue-400"></i><div><strong>1. Exploración:</strong> Búsqueda y perfilación de la persona idónea.</div></li>
+                                        <li class="concept-pill" style="border-left-color: #f59e0b;"><i data-lucide="handshake" class="w-5 h-5 text-yellow-400"></i><div><strong>2. Aproximación:</strong> El contacto inicial (abierto o con cobertura).</div></li>
+                                        <li class="concept-pill" style="border-left-color: #10b981;"><i data-lucide="archive" class="w-5 h-5 text-teal-400"></i><div><strong>3. Registro:</strong> Formalización de la fuente para control y calificación.</div></li>
+                                        <li class="concept-pill" style="border-left-color: #ef4444;"><i data-lucide="settings" class="w-5 h-5 text-red-400"></i><div><strong>4. Entrenamiento y Ejecución:</strong> Orientar, controlar y establecer canales seguros.</div></li>
+                                    </ul>
+                                    <div class="example-box">
+                                        <div class="example-box-title"><i data-lucide="lightbulb" class="w-5 h-5"></i>Ejemplo Didáctico: Cobertura</div>
+                                        <p class="text-sm">Para contactar a un mesero, un agente usa una <strong>cobertura</strong> de "inspector de sanidad". Esto le da una razón legítima para hablar con él a solas.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Acordeón: Capítulo 3 -->
+                        <div class="accordion-item bg-gray-900/50 rounded-lg border border-gray-700/50 overflow-hidden animate-fade-in" style="animation-delay: 1000ms;">
+                            <button onclick="toggleAccordion(this)" class="w-full p-4 flex justify-between items-center text-md font-semibold text-gray-200 hover:bg-gray-800/50 transition-colors">
+                                <span class="flex items-center gap-2 text-left"><i data-lucide="mic-vim" class="w-5 h-5 text-red-400 flex-shrink-0"></i>CAP. III: Técnicas de Obtención de Información</span>
+                                <i data-lucide="chevron-down" class="accordion-chevron w-5 h-5 transition-transform flex-shrink-0"></i>
+                            </button>
+                            <div class="accordion-content">
+                                <div class="p-4 text-sm text-gray-300 border-t border-gray-700/50 space-y-4">
+                                    <h4 class="font-semibold text-base text-gray-100 mb-2">Etapas de la Entrevista</h4>
+                                    <ol class="list-decimal list-inside space-y-2 text-gray-300">
+                                        <li><strong>Preparación o Planeamiento:</strong> Definir E.E.I. (¿Qué necesito saber?).</li>
+                                        <li><strong>Desarrollo:</strong> Crear 'rapport' y formular preguntas (general a particular).</li>
+                                        <li><strong>Revisión:</strong> Aclarar dudas y verificar objetivos.</li>
+                                        <li><strong>Terminación o Cierre:</strong> Asignar tareas y definir próxima cita.</li>
+                                    </ol>
+                                    <div class="example-box">
+                                        <div class="example-box-title" style="color: #3b82f6;"><i data-lucide="repeat" class="w-5 h-5"></i>Técnica de Entrevista: Eco</div>
+                                        <p class="text-sm"><strong class="text-gray-100">Fuente:</strong> "...guardó el paquete en la bodega..."<br>
+                                        <strong class="text-gray-100">Agente (Eco):</strong> "¿En la bodega...?"<br>
+                                        <strong class="text-gray-100">Fuente:</strong> "Sí, la pequeña detrás de la cocina..." (Obtuvo la ubicación sin preguntar).</p>
+                                    </div>
+                                    <div class="example-box">
+                                        <div class="example-box-title" style="color: #ef4444;"><i data-lucide="swords" class="w-5 h-5"></i>Técnica: Confrontación</div>
+                                        <p class="text-sm"><strong class="text-gray-100">Agente:</strong> "Me dijiste X, pero mis datos dicen Y. Ayúdame a entender." (Se usa información verificada para rebatir una mentira).</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Acordeón: Capítulo 4 -->
+                        <div class="accordion-item bg-gray-900/50 rounded-lg border border-gray-700/50 overflow-hidden animate-fade-in" style="animation-delay: 1100ms;">
+                             <button onclick="toggleAccordion(this)" class="w-full p-4 flex justify-between items-center text-md font-semibold text-gray-200 hover:bg-gray-800/50 transition-colors">
+                                <span class="flex items-center gap-2 text-left"><i data-lucide="user-check" class="w-5 h-5 text-violet-400 flex-shrink-0"></i>CAP. IV: Rol del Administrador de Fuentes</span>
+                                <i data-lucide="chevron-down" class="accordion-chevron w-5 h-5 transition-transform flex-shrink-0"></i>
+                            </button>
+                            <div class="accordion-content">
+                                <div class="p-4 text-sm text-gray-300 border-t border-gray-700/50 space-y-4">
+                                    <h4 class="font-semibold text-base text-gray-100 mb-2">Competencias Esenciales</h4>
+                                    <ul>
+                                        <li class="concept-pill" style="border-left-color: #f59e0b;"><i data-lucide="brain" class="w-5 h-5 text-yellow-400"></i><div><strong>Control de Emociones:</strong> No reaccionar, sino gestionar.</div></li>
+                                        <li class="concept-pill" style="border-left-color: #10b981;"><i data-lucide="shield-check" class="w-5 h-5 text-teal-400"></i><div><strong>Ética Profesional:</strong> Coherencia con valores institucionales.</div></li>
+                                        <li class="concept-pill" style="border-left-color: #a855f7;"><i data-lucide="lock" class="w-5 h-5 text-violet-400"></i><div><strong>Compartimentación:</strong> Proceder con cautela, reserva y silencio.</div></li>
+                                    </ul>
+                                    <div class="example-box">
+                                        <div class="example-box-title"><i data-lucide="lightbulb" class="w-5 h-5"></i>Ejemplo Didáctico: Compartimentación</div>
+                                        <p class="text-sm">Un agente obtiene info clave. <strong>NO</strong> la comenta en el almuerzo con colegas, <strong>NO</strong> la habla con su familia. <strong>SOLO</strong> reporta por el canal oficial. Eso es compartimentar.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contenido de Pestaña 2: FAQ -->
+                <div id="faq" class="tab-content hidden">
+                    <div class="space-y-3 text-left">
+                        <!-- FAQ 1 -->
+                        <div class="accordion-item bg-gray-900/50 rounded-lg border border-gray-700/50 overflow-hidden">
+                            <button onclick="toggleAccordion(this)" class="w-full p-4 flex justify-between items-center text-md font-semibold text-gray-200 hover:bg-gray-800/50 transition-colors">
+                                <span class="flex items-center gap-2 text-left"><i data-lucide="help-circle" class="w-5 h-5 text-teal-400 flex-shrink-0"></i>¿Diferencia PRÁCTICA entre Entrevista e Interrogatorio?</span>
+                                <i data-lucide="chevron-down" class="accordion-chevron w-5 h-5 transition-transform flex-shrink-0"></i>
+                            </button>
+                            <div class="accordion-content">
+                                <div class="p-4 text-sm text-gray-300 border-t border-gray-700/50 space-y-4">
+                                    <p>Una <strong>ENTREVISTA</strong> es una <strong>conversación</strong> para obtener información. Es voluntaria y busca crear 'rapport'. Su objetivo es <strong>escuchar</strong>.</p>
+                                    <p>Un <strong>INTERROGATORIO</strong> es una <strong>extracción</strong>. Es adversarial, con alguien bajo custodia, y el objetivo es obtener la verdad de alguien que *no quiere* hablar.</p>
+                                    <div class="example-box" style="border-left-color: #f59e0b;"><div class="example-box-title" style="color: #f59e0b;"><i data-lucide="alert-triangle" class="w-5 h-5"></i>Lección Práctica</div>
+                                        <p class="text-sm">En AFH, hacemos <strong>ENTREVISTAS</strong>. Si trata a una fuente voluntaria (un taxista) como a un detenido (interrogatorio), la fuente se asustará, se cerrará y la perderá.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- FAQ 2 -->
+                        <div class="accordion-item bg-gray-900/50 rounded-lg border border-gray-700/50 overflow-hidden">
+                            <button onclick="toggleAccordion(this)" class="w-full p-4 flex justify-between items-center text-md font-semibold text-gray-200 hover:bg-gray-800/50 transition-colors">
+                                <span class="flex items-center gap-2 text-left"><i data-lucide="help-circle" class="w-5 h-5 text-teal-400 flex-shrink-0"></i>¿Qué hago si descubro que mi fuente me miente?</span>
+                                <i data-lucide="chevron-down" class="accordion-chevron w-5 h-5 transition-transform flex-shrink-0"></i>
+                            </button>
+                            <div class="accordion-content">
+                                <div class="p-4 text-sm text-gray-300 border-t border-gray-700/50 space-y-4">
+                                    <p><strong>NO la confronte agresivamente.</strong> Una mentira le dice mucho: ¿Está asustada? ¿Quiere más dinero? ¿La descubrieron? Su trabajo no es solo oír, es <strong>controlar</strong>.</p>
+                                    <p>Use la Técnica de "Confrontación" en la próxima reunión: ("Me dijiste X, pero mis datos dicen Y. Ayúdame a entender.").</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- FAQ 3 -->
+                        <div class="accordion-item bg-gray-900/50 rounded-lg border border-gray-700/50 overflow-hidden">
+                            <button onclick="toggleAccordion(this)" class="w-full p-4 flex justify-between items-center text-md font-semibold text-gray-200 hover:bg-gray-800/50 transition-colors">
+                                <span class="flex items-center gap-2 text-left"><i data-lucide="help-circle" class="w-5 h-5 text-teal-400 flex-shrink-0"></i>¿Error MÁS GRANDE de un nuevo administrador?</span>
+                                <i data-lucide="chevron-down" class="accordion-chevron w-5 h-5 transition-transform flex-shrink-0"></i>
+                            </button>
+                            <div class="accordion-content">
+                                <div class="p-4 text-sm text-gray-300 border-t border-gray-700/50 space-y-4">
+                                    <p>Dos errores fatales:</p>
+                                    <ul class_="" style="list-style-type: disc; padding-left: 20px;">
+                                        <li><strong>"Enamorarse de la fuente":</strong> Confiar ciegamente en ella sin verificar.</li>
+                                        <li><strong>Romper la compartimentación:</strong> Comentar detalles del caso o la fuente con quien no debe.</li>
+                                    </ul>
+                                    <div class="example-box" style="border-left-color: #f59e0b;"><div class="example-box-title" style="color: #f59e0b;"><i data-lucide="alert-triangle" class="w-5 h-5"></i>Lección Práctica</div>
+                                        <p class="text-sm">"Toda información se verifica" y "Lo que saben dos, es de dominio público".</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contenido de Pestaña 3: GLOSARIO -->
+                <div id="glosario" class="tab-content hidden">
+                    <div class="space-y-4 text-left p-4">
+                        <dl>
+                            <dt class="glosario-termino">Acceso</dt>
+                            <dd class="glosario-definicion mb-3">Alcance que posee la fuente humana para adquirir información privilegiada (Directo o Indirecto).</dd>
+
+                            <dt class="glosario-termino">Cobertura</dt>
+                            <dd class="glosario-definicion mb-3">Actividad tendiente a cubrir, ocultar o disfrazar operaciones de inteligencia (Ej: "Inspector de sanidad").</p></dd>
+                            
+                            <dt class="glosario-termino">Compartimentación</dt>
+                            <dd class="glosario-definicion mb-3">Secreto y discreción. Guardar silencio y usar solo los canales oficiales.</dd>
+
+                            <dt class="glosario-termino">Dossier</dt>
+                            <dd class="glosario-definicion mb-3">Carpeta donde se archiva la información recolectada y la perfilación de un objetivo o fuente.</dd>
+
+                            <dt class="glosario-termino">Fachada</dt>
+                            <dd class="glosario-definicion mb-3">Apariencia que se le da a una organización o persona para cubrir su verdadera identidad (Ej: Una empresa de importaciones que es fachada de lavado).</dd>
+                            
+                            <dt class="glosario-termino">Fuente Humana (FH)</dt>
+                            <dd class="glosario-definicion mb-3">Persona natural que proporciona información de interés a un organismo de inteligencia.</dd>
+
+                            <dt class="glosario-termino">Traficante de Información</dt>
+                            <dd class="glosario-definicion mb-3">Persona que construye información falsa o tergiversada a cambio de beneficios, generando falsas expectativas.</dd>
+                        </dl>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // --- NUEVO: Función para Pestañas (Tabs) ---
+        function showTab(tabId) {
+            // Ocultar todos los contenidos de pestañas
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(c => c.classList.add('hidden'));
+            
+            // Quitar clase 'active' de todos los botones
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(b => b.classList.remove('active'));
+            
+            // Mostrar el contenido de la pestaña seleccionada
+            const activeContent = document.getElementById(tabId);
+            if (activeContent) {
+                activeContent.classList.remove('hidden');
+            }
+            
+            // Añadir clase 'active' al botón seleccionado
+            const activeButton = document.getElementById(`btn-${tabId}`);
+            if (activeButton) {
+                activeButton.classList.add('active');
+            }
+        }
+
+        // --- Función para Acordeón (sin cambios) ---
+        function toggleAccordion(buttonElement) {
+            const item = buttonElement.closest('.accordion-item');
+            if (item) {
+                item.classList.toggle('expanded');
+            }
+        }
+
+        // --- Carga de Íconos y Pestaña por Defecto ---
+        window.onload = function() {
+            lucide.createIcons();
+            
+            // Mostrar la primera pestaña (Temario) por defecto
+            showTab('temario');
+        };
+    </script>
+</body>
+</html>
