@@ -1,478 +1,457 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Interactivo: Manejo de Fuentes Humanas</title>
-    <!-- Carga de Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Carga de Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Configuración del font Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0a0a1a;
-            color: #F9FAFB;
-        }
+import React, { useState, useEffect } from 'react';
+import { 
+  TrendingUp, 
+  Users, 
+  Globe, 
+  AlertTriangle, 
+  DollarSign, 
+  Activity, 
+  ShieldAlert, 
+  Leaf, 
+  Droplets, 
+  Anchor,
+  Lock,
+  ArrowRight
+} from 'lucide-react';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  PieChart, 
+  Pie, 
+  Cell,
+  AreaChart,
+  Area
+} from 'recharts';
 
-        /* Fondo Animado */
-        @keyframes moveGradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        .animated-bg {
-            background: radial-gradient(circle at 10% 20%, rgba(58, 129, 246, 0.3), transparent 40%),
-                        radial-gradient(circle at 80% 90%, rgba(139, 92, 246, 0.3), transparent 40%),
-                        radial-gradient(circle at 50% 50%, rgba(20, 184, 166, 0.2), transparent 50%);
-            background-color: #0a0a1a;
-            background-size: 400% 400%;
-            animation: moveGradient 20s ease-in-out infinite;
-        }
+// --- Datos Simulados basados en el texto ---
+const dataGlobalMarket = [
+  { name: 'Mínimo Est.', value: 1.6, label: '$1.6B' },
+  { name: 'Máximo Est.', value: 2.2, label: '$2.2B' },
+];
 
-        /* Estilo Glassmorphism */
-        .glass-card {
-            background-color: rgba(10, 10, 26, 0.65);
-            backdrop-filter: blur(14px) saturate(160%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-        }
+const dataVictims = [
+  { name: 'Mujeres y Niñas', value: 79, color: '#ff2d55' },
+  { name: 'Otros', value: 21, color: '#5e5ce6' },
+];
 
-        /* --- NUEVO: Animaciones de Entrada --- */
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes slideInBottom {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .animate-fade-in {
-            animation: fadeIn 0.6s ease-out forwards;
-            opacity: 0;
-        }
-        .animate-slide-in-bottom {
-            animation: slideInBottom 0.6s ease-out forwards;
-            opacity: 0;
-        }
+const dataResources = [
+  { name: 'Militar', value: 80, color: '#ff3b30' },
+  { name: 'Social', value: 20, color: '#32d74b' },
+];
 
-        /* --- NUEVO: Estilo Tarjetas Concepto (con scroll H) --- */
-        .concept-card {
-            background-color: rgba(17, 24, 39, 0.7);
-            border: 1px solid rgba(55, 65, 81, 0.5);
-            border-radius: 0.75rem;
-            padding: 1.25rem;
-            transition: all 0.3s ease;
-            height: 100%;
-            /* Para scroll horizontal en móvil */
-            width: 260px; /* Ancho fijo para scroll */
-            flex-shrink: 0; /* Evita que se encoja */
-        }
-        .concept-card:hover {
-            background-color: rgba(17, 24, 39, 0.9);
-            border-color: rgba(59, 130, 246, 0.7);
-            transform: translateY(-4px) scale(1.02); /* Efecto hover mejorado */
-        }
-        /* En pantallas medianas (md) y superiores, vuelve a ser grid */
-        @media (min-width: 768px) {
-            .concept-card {
-                width: auto; /* Ancho automático para grid */
-            }
-        }
+const timelineData = [
+  { year: '2000', violence: 40, production: 50 },
+  { year: '2010', violence: 65, production: 60 },
+  { year: '2020', violence: 85, production: 80 },
+  { year: '2025', violence: 100, production: 95 },
+];
 
-        /* --- NUEVO: Estilos de Pestañas (Tabs) --- */
-        .tab-btn {
-            padding: 0.75rem 1rem;
-            font-weight: 600;
-            color: #9CA3AF; /* gray-400 */
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .tab-btn:hover {
-            color: #F9FAFB; /* gray-50 */
-            background-color: rgba(255, 255, 255, 0.05);
-        }
-        .tab-btn.active {
-            color: #3B82F6; /* blue-500 */
-            border-bottom-color: #3B82F6;
-        }
-        .tab-content.hidden {
-            display: none;
-        }
+// --- Componentes de Estilo ---
 
-        /* Estilos Acordeón (Sin cambios) */
-        .accordion-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.7s ease-in-out;
-        }
-        .accordion-item.expanded .accordion-content {
-            max-height: 2500px;
-        }
-        .accordion-chevron {
-            transition: transform 0.5s ease-in-out;
-        }
-        .accordion-item.expanded .accordion-chevron {
-            transform: rotate(180deg);
-        }
+const LiquidBackground = () => (
+  <div className="fixed inset-0 z-0 overflow-hidden bg-[#050511]">
+    <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-blue-600/30 rounded-full blur-[120px] animate-pulse mix-blend-screen" />
+    <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-purple-600/20 rounded-full blur-[120px] animate-pulse mix-blend-screen delay-1000" />
+    <div className="absolute top-[40%] left-[30%] w-[30vw] h-[30vw] bg-cyan-500/20 rounded-full blur-[100px] animate-bounce-slow mix-blend-screen" />
+    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay pointer-events-none"></div>
+  </div>
+);
 
-        /* Estilos de 'Pills' y Ejemplos (Sin cambios) */
-        .accordion-content ul { list-style-type: none; padding-left: 0; display: flex; flex-direction: column; gap: 0.75rem; }
-        .concept-pill { display: flex; align-items: center; gap: 0.75rem; background-color: rgba(31, 41, 55, 0.6); padding: 0.75rem 1rem; border-radius: 0.5rem; border-left: 4px solid #3b82f6; transition: background-color 0.2s ease; }
-        .concept-pill:hover { background-color: rgba(31, 41, 55, 0.9); }
-        .example-box { background-color: rgba(10, 10, 26, 0.7); border-left: 4px solid #10b981; border-radius: 0.5rem; padding: 1rem; margin-top: 1rem; margin-bottom: 1rem; }
-        .example-box-title { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 1.125rem; color: #10b981; margin-bottom: 0.5rem; }
-        
-        /* Estilo Glosario */
-        .glosario-termino {
-            font-weight: 700;
-            color: #3B82F6; /* azul */
-        }
-        .glosario-definicion {
-            padding-left: 1.5rem; /* sangría */
-            color: #D1D5DB; /* gray-300 */
-        }
+const GlassCard = ({ children, className = "", title, subtitle, icon: Icon, accentColor = "blue" }) => {
+  const accents = {
+    blue: "from-blue-500 to-cyan-400",
+    purple: "from-purple-500 to-pink-500",
+    red: "from-red-500 to-orange-500",
+    green: "from-green-400 to-emerald-600",
+    gold: "from-yellow-400 to-amber-600"
+  };
 
-    </style>
-</head>
-<body class="overflow-x-hidden"> <!-- Evita scroll H en el body -->
-    <div class="relative min-h-screen text-gray-200 p-4 sm:p-6 md:p-8 font-sans">
-        <!-- Fondo animado -->
-        <div class="absolute inset-0 -z-10 h-full w-full animated-bg"></div>
-
-        <div class="relative max-w-7xl mx-auto px-0 sm:px-6 lg:px-8">
-            <!-- Encabezado del Módulo -->
-            <header class="glass-card mb-12 p-8 text-center animate-fade-in">
-                <!-- Logos -->
-                <div class="flex justify-center items-center gap-x-8 mb-6">
-                    <img
-                        src="https://github.com/Danny20251992/Protocolo-final/blob/main/img/images.png?raw=true"
-                        alt="Escudo Policía Nacional del Ecuador"
-                        class="h-20 md:h-24 object-contain transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(58,129,246,0.6)] hover:drop-shadow-[0_0_16px_rgba(58,129,246,1)] hover:scale-105"
-                        onerror="this.onerror=null; this.src='https://placehold.co/96x96/1f2937/ffffff?text=PNE';"
-                    />
-                    <img
-                        src="https://github.com/Danny20251992/Protocolo-final/blob/main/img/DIGIN_logo-removebg-preview.png?raw=true"
-                        alt="Logo DIGIN"
-                        class="h-20 md:h-24 object-contain transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(139,92,246,0.6)] hover:drop-shadow-[0_0_16px_rgba(139,92,246,1)] hover:scale-105"
-                        onerror="this.onerror=null; this.src='https://placehold.co/96x96/1f2937/ffffff?text=DIGIN';"
-                    />
-                </div>
-                <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-blue-400 to-violet-400 mb-2">
-                    Manejo y Reclutamiento de Fuentes Humanas
-                </h1>
-                <p class="text-base md:text-lg text-gray-300 font-medium mt-2">
-                    V Curso Nacional y III Internacional de Búsqueda y Captura.
-                </p>
-            </header>
-
-            <!-- Conceptos Clave del Módulo (Scroll Horizontal en Móvil) -->
-            <section id="conceptos-clave" class="mb-12">
-                <h2 class="text-2xl md:text-3xl font-extrabold text-center mb-6 text-gray-100 animate-fade-in" style="animation-delay: 100ms;">
-                    Conceptos Clave del Módulo
-                </h2>
-                <!-- Contenedor de Scroll/Grid -->
-                <div class="flex overflow-x-auto space-x-4 p-4 md:grid md:grid-cols-2 lg:grid-cols-4 md:space-x-0 md:gap-6">
-                    <!-- Card 1: Ciclo AFH -->
-                    <div class="concept-card animate-slide-in-bottom" style="animation-delay: 200ms;">
-                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-600/30 mb-4">
-                            <i data-lucide="refresh-cw" class="w-6 h-6 text-blue-400"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-white mb-2">El Ciclo AFH</h3>
-                        <p class="text-sm text-gray-400">Es un CICLO continuo: Exploración, Aproximación, Registro y Entrenamiento se retroalimentan constantemente.</p>
-                    </div>
-                    <!-- Card 2: Motivación -->
-                    <div class="concept-card animate-slide-in-bottom" style="animation-delay: 300ms;">
-                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-yellow-600/30 mb-4">
-                            <i data-lucide="heart-crack" class="w-6 h-6 text-yellow-400"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-white mb-2">La Motivación</h3>
-                        <p class="text-sm text-gray-400">Es la LLAVE del reclutamiento. Entender el "por qué" (Venganza, Dinero, Ideología) permite al administrador mantener el control.</p>
-                    </div>
-                    <!-- Card 3: La Entrevista -->
-                    <div class="concept-card animate-slide-in-bottom" style="animation-delay: 400ms;">
-                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-red-600/30 mb-4">
-                            <i data-lucide="mic-vim" class="w-6 h-6 text-red-400"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-white mb-2">La Entrevista Estratégica</h3>
-                        <p class="text-sm text-gray-400">NO es un interrogatorio. Es una conversación controlada. El silencio, el eco y la confrontación son herramientas, no armas.</p>
-                    </div>
-                    <!-- Card 4: Legalidad y Ética -->
-                    <div class="concept-card animate-slide-in-bottom" style="animation-delay: 500ms;">
-                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-teal-600/30 mb-4">
-                            <i data-lucide="shield-check" class="w-6 h-6 text-teal-400"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-white mb-2">Legalidad y Ética</h3>
-                        <p class="text-sm text-gray-400">La información obtenida fuera del marco legal es NULA. La ética y el respeto a los DD.HH. garantizan la validez probatoria.</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- NUEVO: Contenedor Principal de Pestañas (Tabs) -->
-            <section id="main-content" class="glass-card p-4 sm:p-6 md:p-8 animate-fade-in" style="animation-delay: 600ms;">
-                <!-- Botones de Pestañas -->
-                <div class="flex border-b border-gray-700/50 mb-6 overflow-x-auto">
-                    <button id="btn-temario" class="tab-btn flex items-center gap-2" onclick="showTab('temario')">
-                        <i data-lucide="book-open" class="w-4 h-4"></i> Temario del Módulo
-                    </button>
-                    <button id="btn-faq" class="tab-btn flex items-center gap-2" onclick="showTab('faq')">
-                        <i data-lucide="help-circle" class="w-4 h-4"></i> Preguntas Frecuentes (FAQ)
-                    </button>
-                    <button id="btn-glosario" class="tab-btn flex items-center gap-2" onclick="showTab('glosario')">
-                        <i data-lucide="book" class="w-4 h-4"></i> Glosario de Términos
-                    </button>
-                </div>
-
-                <!-- Contenido de Pestaña 1: TEMARIO -->
-                <div id="temario" class="tab-content">
-                    <div class="space-y-3 text-left">
-                        <!-- Acordeón: Introducción y Objetivos -->
-                        <div class="accordion-item bg-gray-900/50 rounded-lg border border-gray-700/50 overflow-hidden animate-fade-in" style="animation-delay: 700ms;">
-                            <button onclick="toggleAccordion(this)" class="w-full p-4 flex justify-between items-center text-md font-semibold text-gray-200 hover:bg-gray-800/50 transition-colors">
-                                <span class="flex items-center gap-2 text-left"><i data-lucide="target" class="w-5 h-5 text-teal-400 flex-shrink-0"></i>Introducción y Objetivos del Módulo</span>
-                                <i data-lucide="chevron-down" class="accordion-chevron w-5 h-5 transition-transform flex-shrink-0"></i>
-                            </button>
-                            <div class="accordion-content">
-                                <div class="p-4 text-sm text-gray-300 border-t border-gray-700/50 space-y-4">
-                                    <p>La Administración de Fuentes Humanas (AFH) y la Entrevista Policial constituyen ejes estratégicos de la Inteligencia Humana (HUMINT). Este módulo ofrece una guía técnica para fortalecer las capacidades del personal policial...</p>
-                                    <h4 class="font-semibold text-base text-gray-100">Objetivo General</h4>
-                                    <p>Formar al personal policial en metodologías, procedimientos y técnicas especializadas de la AFH y de la Entrevista Policial, fortaleciendo sus capacidades para recolectar, procesar y validar información...</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Acordeón: Capítulo 1 -->
-                        <div class="accordion-item bg-gray-900/50 rounded-lg border border-gray-700/50 overflow-hidden animate-fade-in" style="animation-delay: 800ms;">
-                            <button onclick="toggleAccordion(this)" class="w-full p-4 flex justify-between items-center text-md font-semibold text-gray-200 hover:bg-gray-800/50 transition-colors">
-                                <span class="flex items-center gap-2 text-left"><i data-lucide="users" class="w-5 h-5 text-blue-400 flex-shrink-0"></i>CAP. I: Administración y Clasificación de Fuentes</span>
-                                <i data-lucide="chevron-down" class="accordion-chevron w-5 h-5 transition-transform flex-shrink-0"></i>
-                            </button>
-                            <div class="accordion-content">
-                                <div class="p-4 text-sm text-gray-300 border-t border-gray-700/50 space-y-4">
-                                    <h4 class="font-semibold text-base text-gray-100 mb-2">Clasificación por Motivación</h4>
-                                    <ul>
-                                        <li class="concept-pill" style="border-left-color: #3b82f6;"><i data-lucide="dollar-sign" class="w-5 h-5 text-blue-400"></i><div><strong>Interés Económico:</strong> Busca remuneración.</div></li>
-                                        <li class="concept-pill" style="border-left-color: #ef4444;"><i data-lucide="heart-crack" class="w-5 h-5 text-red-400"></i><div><strong>Emocional (Venganza):</strong> Aporta por odio, ira o despecho.</div></li>
-                                        <li class="concept-pill" style="border-left-color: #10b981;"><i data-lucide="flag" class="w-5 h-5 text-teal-400"></i><div><strong>Patriotismo / Ideológica:</strong> Por convicciones o pertenencia.</div></li>
-                                        <li class="concept-pill" style="border-left-color: #f59e0b;"><i data-lucide="gavel" class="w-5 h-5 text-yellow-400"></i><div><strong>Interés Personal:</strong> Busca beneficios jurídicos o protección.</div></li>
-                                    </ul>
-                                    <div class="example-box">
-                                        <div class="example-box-title"><i data-lucide="lightbulb" class="w-5 h-5"></i>Ejemplo Didáctico: Motivación</div>
-                                        <p class="text-sm">Un agente identifica que el contador de una organización criminal tiene un hijo enfermo (Motivación: <strong>Económico</strong>) y fue humillado por su jefe (Motivación: <strong>Venganza</strong>). El agente usará ambas.</p>
-                                    </div>
-                                    <h4 class="font-semibold text-base text-gray-100 mb-2 mt-6">¡Alerta! El Traficante de Información</h4>
-                                    <div class="concept-pill" style="border-left-color: #a855f7;"><i data-lucide="alert-triangle" class="w-5 h-5 text-violet-400"></i><div><strong>Definición:</strong> Construye información falsa para obtener beneficios, desperdiciando recursos.</div></div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Acordeón: Capítulo 2 -->
-                        <div class="accordion-item bg-gray-900/50 rounded-lg border border-gray-700/50 overflow-hidden animate-fade-in" style="animation-delay: 900ms;">
-                            <button onclick="toggleAccordion(this)" class="w-full p-4 flex justify-between items-center text-md font-semibold text-gray-200 hover:bg-gray-800/50 transition-colors">
-                                <span class="flex items-center gap-2 text-left"><i data-lucide="refresh-cw" class="w-5 h-5 text-yellow-400 flex-shrink-0"></i>CAP. II: Etapas para la Administración (Ciclo AFH)</span>
-                                <i data-lucide="chevron-down" class="accordion-chevron w-5 h-5 transition-transform flex-shrink-0"></i>
-                            </button>
-                            <div class="accordion-content">
-                                <div class="p-4 text-sm text-gray-300 border-t border-gray-700/50 space-y-4">
-                                    <ul>
-                                        <li class="concept-pill" style="border-left-color: #3b82f6;"><i data-lucide="search" class="w-5 h-5 text-blue-400"></i><div><strong>1. Exploración:</strong> Búsqueda y perfilación de la persona idónea.</div></li>
-                                        <li class="concept-pill" style="border-left-color: #f59e0b;"><i data-lucide="handshake" class="w-5 h-5 text-yellow-400"></i><div><strong>2. Aproximación:</strong> El contacto inicial (abierto o con cobertura).</div></li>
-                                        <li class="concept-pill" style="border-left-color: #10b981;"><i data-lucide="archive" class="w-5 h-5 text-teal-400"></i><div><strong>3. Registro:</strong> Formalización de la fuente para control y calificación.</div></li>
-                                        <li class="concept-pill" style="border-left-color: #ef4444;"><i data-lucide="settings" class="w-5 h-5 text-red-400"></i><div><strong>4. Entrenamiento y Ejecución:</strong> Orientar, controlar y establecer canales seguros.</div></li>
-                                    </ul>
-                                    <div class="example-box">
-                                        <div class="example-box-title"><i data-lucide="lightbulb" class="w-5 h-5"></i>Ejemplo Didáctico: Cobertura</div>
-                                        <p class="text-sm">Para contactar a un mesero, un agente usa una <strong>cobertura</strong> de "inspector de sanidad". Esto le da una razón legítima para hablar con él a solas.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Acordeón: Capítulo 3 -->
-                        <div class="accordion-item bg-gray-900/50 rounded-lg border border-gray-700/50 overflow-hidden animate-fade-in" style="animation-delay: 1000ms;">
-                            <button onclick="toggleAccordion(this)" class="w-full p-4 flex justify-between items-center text-md font-semibold text-gray-200 hover:bg-gray-800/50 transition-colors">
-                                <span class="flex items-center gap-2 text-left"><i data-lucide="mic-vim" class="w-5 h-5 text-red-400 flex-shrink-0"></i>CAP. III: Técnicas de Obtención de Información</span>
-                                <i data-lucide="chevron-down" class="accordion-chevron w-5 h-5 transition-transform flex-shrink-0"></i>
-                            </button>
-                            <div class="accordion-content">
-                                <div class="p-4 text-sm text-gray-300 border-t border-gray-700/50 space-y-4">
-                                    <h4 class="font-semibold text-base text-gray-100 mb-2">Etapas de la Entrevista</h4>
-                                    <ol class="list-decimal list-inside space-y-2 text-gray-300">
-                                        <li><strong>Preparación o Planeamiento:</strong> Definir E.E.I. (¿Qué necesito saber?).</li>
-                                        <li><strong>Desarrollo:</strong> Crear 'rapport' y formular preguntas (general a particular).</li>
-                                        <li><strong>Revisión:</strong> Aclarar dudas y verificar objetivos.</li>
-                                        <li><strong>Terminación o Cierre:</strong> Asignar tareas y definir próxima cita.</li>
-                                    </ol>
-                                    <div class="example-box">
-                                        <div class="example-box-title" style="color: #3b82f6;"><i data-lucide="repeat" class="w-5 h-5"></i>Técnica de Entrevista: Eco</div>
-                                        <p class="text-sm"><strong class="text-gray-100">Fuente:</strong> "...guardó el paquete en la bodega..."<br>
-                                        <strong class="text-gray-100">Agente (Eco):</strong> "¿En la bodega...?"<br>
-                                        <strong class="text-gray-100">Fuente:</strong> "Sí, la pequeña detrás de la cocina..." (Obtuvo la ubicación sin preguntar).</p>
-                                    </div>
-                                    <div class="example-box">
-                                        <div class="example-box-title" style="color: #ef4444;"><i data-lucide="swords" class="w-5 h-5"></i>Técnica: Confrontación</div>
-                                        <p class="text-sm"><strong class="text-gray-100">Agente:</strong> "Me dijiste X, pero mis datos dicen Y. Ayúdame a entender." (Se usa información verificada para rebatir una mentira).</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Acordeón: Capítulo 4 -->
-                        <div class="accordion-item bg-gray-900/50 rounded-lg border border-gray-700/50 overflow-hidden animate-fade-in" style="animation-delay: 1100ms;">
-                             <button onclick="toggleAccordion(this)" class="w-full p-4 flex justify-between items-center text-md font-semibold text-gray-200 hover:bg-gray-800/50 transition-colors">
-                                <span class="flex items-center gap-2 text-left"><i data-lucide="user-check" class="w-5 h-5 text-violet-400 flex-shrink-0"></i>CAP. IV: Rol del Administrador de Fuentes</span>
-                                <i data-lucide="chevron-down" class="accordion-chevron w-5 h-5 transition-transform flex-shrink-0"></i>
-                            </button>
-                            <div class="accordion-content">
-                                <div class="p-4 text-sm text-gray-300 border-t border-gray-700/50 space-y-4">
-                                    <h4 class="font-semibold text-base text-gray-100 mb-2">Competencias Esenciales</h4>
-                                    <ul>
-                                        <li class="concept-pill" style="border-left-color: #f59e0b;"><i data-lucide="brain" class="w-5 h-5 text-yellow-400"></i><div><strong>Control de Emociones:</strong> No reaccionar, sino gestionar.</div></li>
-                                        <li class="concept-pill" style="border-left-color: #10b981;"><i data-lucide="shield-check" class="w-5 h-5 text-teal-400"></i><div><strong>Ética Profesional:</strong> Coherencia con valores institucionales.</div></li>
-                                        <li class="concept-pill" style="border-left-color: #a855f7;"><i data-lucide="lock" class="w-5 h-5 text-violet-400"></i><div><strong>Compartimentación:</strong> Proceder con cautela, reserva y silencio.</div></li>
-                                    </ul>
-                                    <div class="example-box">
-                                        <div class="example-box-title"><i data-lucide="lightbulb" class="w-5 h-5"></i>Ejemplo Didáctico: Compartimentación</div>
-                                        <p class="text-sm">Un agente obtiene info clave. <strong>NO</strong> la comenta en el almuerzo con colegas, <strong>NO</strong> la habla con su familia. <strong>SOLO</strong> reporta por el canal oficial. Eso es compartimentar.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Contenido de Pestaña 2: FAQ -->
-                <div id="faq" class="tab-content hidden">
-                    <div class="space-y-3 text-left">
-                        <!-- FAQ 1 -->
-                        <div class="accordion-item bg-gray-900/50 rounded-lg border border-gray-700/50 overflow-hidden">
-                            <button onclick="toggleAccordion(this)" class="w-full p-4 flex justify-between items-center text-md font-semibold text-gray-200 hover:bg-gray-800/50 transition-colors">
-                                <span class="flex items-center gap-2 text-left"><i data-lucide="help-circle" class="w-5 h-5 text-teal-400 flex-shrink-0"></i>¿Diferencia PRÁCTICA entre Entrevista e Interrogatorio?</span>
-                                <i data-lucide="chevron-down" class="accordion-chevron w-5 h-5 transition-transform flex-shrink-0"></i>
-                            </button>
-                            <div class="accordion-content">
-                                <div class="p-4 text-sm text-gray-300 border-t border-gray-700/50 space-y-4">
-                                    <p>Una <strong>ENTREVISTA</strong> es una <strong>conversación</strong> para obtener información. Es voluntaria y busca crear 'rapport'. Su objetivo es <strong>escuchar</strong>.</p>
-                                    <p>Un <strong>INTERROGATORIO</strong> es una <strong>extracción</strong>. Es adversarial, con alguien bajo custodia, y el objetivo es obtener la verdad de alguien que *no quiere* hablar.</p>
-                                    <div class="example-box" style="border-left-color: #f59e0b;"><div class="example-box-title" style="color: #f59e0b;"><i data-lucide="alert-triangle" class="w-5 h-5"></i>Lección Práctica</div>
-                                        <p class="text-sm">En AFH, hacemos <strong>ENTREVISTAS</strong>. Si trata a una fuente voluntaria (un taxista) como a un detenido (interrogatorio), la fuente se asustará, se cerrará y la perderá.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- FAQ 2 -->
-                        <div class="accordion-item bg-gray-900/50 rounded-lg border border-gray-700/50 overflow-hidden">
-                            <button onclick="toggleAccordion(this)" class="w-full p-4 flex justify-between items-center text-md font-semibold text-gray-200 hover:bg-gray-800/50 transition-colors">
-                                <span class="flex items-center gap-2 text-left"><i data-lucide="help-circle" class="w-5 h-5 text-teal-400 flex-shrink-0"></i>¿Qué hago si descubro que mi fuente me miente?</span>
-                                <i data-lucide="chevron-down" class="accordion-chevron w-5 h-5 transition-transform flex-shrink-0"></i>
-                            </button>
-                            <div class="accordion-content">
-                                <div class="p-4 text-sm text-gray-300 border-t border-gray-700/50 space-y-4">
-                                    <p><strong>NO la confronte agresivamente.</strong> Una mentira le dice mucho: ¿Está asustada? ¿Quiere más dinero? ¿La descubrieron? Su trabajo no es solo oír, es <strong>controlar</strong>.</p>
-                                    <p>Use la Técnica de "Confrontación" en la próxima reunión: ("Me dijiste X, pero mis datos dicen Y. Ayúdame a entender.").</p>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- FAQ 3 -->
-                        <div class="accordion-item bg-gray-900/50 rounded-lg border border-gray-700/50 overflow-hidden">
-                            <button onclick="toggleAccordion(this)" class="w-full p-4 flex justify-between items-center text-md font-semibold text-gray-200 hover:bg-gray-800/50 transition-colors">
-                                <span class="flex items-center gap-2 text-left"><i data-lucide="help-circle" class="w-5 h-5 text-teal-400 flex-shrink-0"></i>¿Error MÁS GRANDE de un nuevo administrador?</span>
-                                <i data-lucide="chevron-down" class="accordion-chevron w-5 h-5 transition-transform flex-shrink-0"></i>
-                            </button>
-                            <div class="accordion-content">
-                                <div class="p-4 text-sm text-gray-300 border-t border-gray-700/50 space-y-4">
-                                    <p>Dos errores fatales:</p>
-                                    <ul class_="" style="list-style-type: disc; padding-left: 20px;">
-                                        <li><strong>"Enamorarse de la fuente":</strong> Confiar ciegamente en ella sin verificar.</li>
-                                        <li><strong>Romper la compartimentación:</strong> Comentar detalles del caso o la fuente con quien no debe.</li>
-                                    </ul>
-                                    <div class="example-box" style="border-left-color: #f59e0b;"><div class="example-box-title" style="color: #f59e0b;"><i data-lucide="alert-triangle" class="w-5 h-5"></i>Lección Práctica</div>
-                                        <p class="text-sm">"Toda información se verifica" y "Lo que saben dos, es de dominio público".</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Contenido de Pestaña 3: GLOSARIO -->
-                <div id="glosario" class="tab-content hidden">
-                    <div class="space-y-4 text-left p-4">
-                        <dl>
-                            <dt class="glosario-termino">Acceso</dt>
-                            <dd class="glosario-definicion mb-3">Alcance que posee la fuente humana para adquirir información privilegiada (Directo o Indirecto).</dd>
-
-                            <dt class="glosario-termino">Cobertura</dt>
-                            <dd class="glosario-definicion mb-3">Actividad tendiente a cubrir, ocultar o disfrazar operaciones de inteligencia (Ej: "Inspector de sanidad").</p></dd>
-                            
-                            <dt class="glosario-termino">Compartimentación</dt>
-                            <dd class="glosario-definicion mb-3">Secreto y discreción. Guardar silencio y usar solo los canales oficiales.</dd>
-
-                            <dt class="glosario-termino">Dossier</dt>
-                            <dd class="glosario-definicion mb-3">Carpeta donde se archiva la información recolectada y la perfilación de un objetivo o fuente.</dd>
-
-                            <dt class="glosario-termino">Fachada</dt>
-                            <dd class="glosario-definicion mb-3">Apariencia que se le da a una organización o persona para cubrir su verdadera identidad (Ej: Una empresa de importaciones que es fachada de lavado).</dd>
-                            
-                            <dt class="glosario-termino">Fuente Humana (FH)</dt>
-                            <dd class="glosario-definicion mb-3">Persona natural que proporciona información de interés a un organismo de inteligencia.</dd>
-
-                            <dt class="glosario-termino">Traficante de Información</dt>
-                            <dd class="glosario-definicion mb-3">Persona que construye información falsa o tergiversada a cambio de beneficios, generando falsas expectativas.</dd>
-                        </dl>
-                    </div>
-                </div>
-            </section>
-        </div>
+  return (
+    <div className={`relative group overflow-hidden rounded-[32px] border border-white/10 bg-white/5 backdrop-blur-2xl shadow-2xl transition-all duration-500 hover:bg-white/10 hover:scale-[1.01] ${className}`}>
+      {/* Glow Effect */}
+      <div className={`absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br ${accents[accentColor]} opacity-20 blur-[60px] group-hover:opacity-40 transition-opacity duration-500`} />
+      
+      <div className="p-6 relative z-10 h-full flex flex-col">
+        {title && (
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-white tracking-wide font-display">{title}</h3>
+              {subtitle && <p className="text-xs text-white/50 uppercase tracking-wider mt-1">{subtitle}</p>}
+            </div>
+            {Icon && (
+              <div className={`p-3 rounded-2xl bg-gradient-to-br ${accents[accentColor]} bg-opacity-20 text-white shadow-lg shadow-${accentColor}-500/20`}>
+                <Icon size={20} />
+              </div>
+            )}
+          </div>
+        )}
+        <div className="flex-grow">{children}</div>
+      </div>
     </div>
+  );
+};
 
-    <script>
-        // --- NUEVO: Función para Pestañas (Tabs) ---
-        function showTab(tabId) {
-            // Ocultar todos los contenidos de pestañas
-            const contents = document.querySelectorAll('.tab-content');
-            contents.forEach(c => c.classList.add('hidden'));
-            
-            // Quitar clase 'active' de todos los botones
-            const buttons = document.querySelectorAll('.tab-btn');
-            buttons.forEach(b => b.classList.remove('active'));
-            
-            // Mostrar el contenido de la pestaña seleccionada
-            const activeContent = document.getElementById(tabId);
-            if (activeContent) {
-                activeContent.classList.remove('hidden');
-            }
-            
-            // Añadir clase 'active' al botón seleccionado
-            const activeButton = document.getElementById(`btn-${tabId}`);
-            if (activeButton) {
-                activeButton.classList.add('active');
-            }
+const StatBadge = ({ label, value, trend, color = "green" }) => (
+  <div className="flex flex-col">
+    <span className="text-xs text-white/60 font-medium uppercase tracking-wider">{label}</span>
+    <div className="flex items-end gap-2 mt-1">
+      <span className="text-2xl font-bold text-white font-display">{value}</span>
+      {trend && (
+        <span className={`text-xs font-bold mb-1 ${trend > 0 ? 'text-green-400' : 'text-red-400'}`}>
+          {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}%
+        </span>
+      )}
+    </div>
+  </div>
+);
+
+// --- Componente Principal ---
+
+export default function DashboardCrimen2025() {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
+  return (
+    <div className="relative min-h-screen text-white font-sans selection:bg-cyan-500/30">
+      <LiquidBackground />
+
+      <div className="relative z-10 p-4 md:p-8 max-w-[1600px] mx-auto">
+        {/* Header */}
+        <header className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <span className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[10px] font-bold tracking-[0.2em] uppercase text-cyan-300 backdrop-blur-md shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                Informe de Inteligencia
+              </span>
+              <span className="text-xs text-white/40">LATAM 2025</span>
+            </div>
+            <h1 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/50 font-display tracking-tight">
+              Crimen Organizado
+            </h1>
+            <p className="text-lg text-white/60 mt-2 max-w-xl font-light leading-relaxed">
+              Evolución, diversificación y el impacto de las economías ilícitas paralelas en la región.
+            </p>
+          </div>
+          
+          <div className="flex gap-4">
+            <button 
+              onClick={() => setActiveTab('overview')}
+              className={`px-6 py-3 rounded-2xl text-sm font-medium transition-all duration-300 ${activeTab === 'overview' ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.3)]' : 'bg-white/5 hover:bg-white/10 border border-white/10'}`}
+            >
+              Panorama Global
+            </button>
+            <button 
+              onClick={() => setActiveTab('markets')}
+              className={`px-6 py-3 rounded-2xl text-sm font-medium transition-all duration-300 ${activeTab === 'markets' ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.3)]' : 'bg-white/5 hover:bg-white/10 border border-white/10'}`}
+            >
+              Mercados & Impacto
+            </button>
+          </div>
+        </header>
+
+        {/* Grid Principal */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          
+          {/* --- SECTION: KEY METRICS (Top Row) --- */}
+          <div className="col-span-1 md:col-span-12 grid grid-cols-1 md:grid-cols-4 gap-6 mb-2">
+            <GlassCard className="col-span-1 md:col-span-2" accentColor="blue">
+              <div className="flex items-center justify-between h-full">
+                <div>
+                  <h2 className="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 tracking-tighter">
+                    $2.2<span className="text-3xl md:text-4xl text-white/50">T</span>
+                  </h2>
+                  <p className="text-sm text-white/70 mt-2 font-medium tracking-wide">MOVIMIENTO ANUAL ESTIMADO</p>
+                  <p className="text-xs text-white/40 mt-1">Mercados ilícitos globales</p>
+                </div>
+                <div className="h-20 w-32">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={timelineData}>
+                      <defs>
+                        <linearGradient id="colorViol" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#22d3ee" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <Area type="monotone" dataKey="violence" stroke="#22d3ee" fillOpacity={1} fill="url(#colorViol)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </GlassCard>
+
+            <GlassCard className="col-span-1" title="Alcance" icon={Globe} accentColor="purple">
+              <StatBadge label="Consumidores Cocaína" value="23 Millones" trend={+5.2} />
+              <div className="mt-4 pt-4 border-t border-white/10">
+                 <p className="text-xs text-white/50 leading-relaxed">
+                   Colombia, Perú y Bolivia concentran la producción mundial.
+                 </p>
+              </div>
+            </GlassCard>
+
+            <GlassCard className="col-span-1" title="Estrategia" icon={AlertTriangle} accentColor="red">
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-white/80">Diversificación</span>
+                  <div className="w-20 h-1 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-red-500 w-[90%]"></div>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-white/80">Transnacionalidad</span>
+                  <div className="w-20 h-1 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-orange-500 w-[85%]"></div>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-white/80">Control Territorial</span>
+                  <div className="w-20 h-1 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-yellow-500 w-[75%]"></div>
+                  </div>
+                </div>
+              </div>
+            </GlassCard>
+          </div>
+
+          {activeTab === 'overview' && (
+            <>
+              {/* Main Content: Left Column - Narco & Policy */}
+              <div className="col-span-1 md:col-span-7 flex flex-col gap-6">
+                <GlassCard title="Fracaso de la Política Represiva" subtitle="Análisis Histórico" icon={ShieldAlert} accentColor="red" className="h-full">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center h-full">
+                    <div className="space-y-6">
+                      <div className="relative p-4 rounded-2xl bg-white/5 border border-white/5">
+                        <h4 className="text-red-400 font-bold mb-2 flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div> Plan Colombia
+                        </h4>
+                        <div className="flex items-center gap-4">
+                          <div className="w-24 h-24 relative">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie data={dataResources} innerRadius={30} outerRadius={40} paddingAngle={5} dataKey="value">
+                                  {dataResources.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                                  ))}
+                                </Pie>
+                              </PieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute inset-0 flex items-center justify-center flex-col">
+                               <span className="text-xs font-bold text-red-400">80%</span>
+                            </div>
+                          </div>
+                          <div className="text-xs text-white/60">
+                            <p><strong className="text-white">Recursos Militares:</strong> 80%</p>
+                            <p><strong className="text-white">Inversión Social:</strong> 20%</p>
+                            <p className="mt-2 text-red-300 italic">"Aumentaron cultivos y violencia"</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="relative p-4 rounded-2xl bg-white/5 border border-white/5">
+                        <h4 className="text-orange-400 font-bold mb-2 flex items-center gap-2">
+                           Iniciativa Mérida (México)
+                        </h4>
+                        <p className="text-3xl font-bold text-white mb-1">250,000+</p>
+                        <p className="text-xs text-white/50 uppercase tracking-wider mb-2">Asesinatos registrados</p>
+                        <p className="text-sm text-white/70">
+                          Estrategia de "descabezamiento" resultó en fragmentación de cárteles y violencia récord.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="h-64 rounded-2xl bg-gradient-to-b from-white/5 to-transparent p-4 border border-white/5">
+                      <p className="text-xs text-center mb-4 text-white/50 uppercase">Correlación: Represión vs Violencia</p>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={timelineData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                          <XAxis dataKey="year" stroke="rgba(255,255,255,0.3)" fontSize={12} tickLine={false} axisLine={false} />
+                          <Tooltip 
+                            contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '12px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }} 
+                            itemStyle={{ color: '#fff' }}
+                          />
+                          <Bar dataKey="production" name="Producción Drogas" fill="#3b82f6" radius={[4, 4, 0, 0]} stackId="a" />
+                          <Bar dataKey="violence" name="Índice Violencia" fill="#ef4444" radius={[4, 4, 0, 0]} stackId="a" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </GlassCard>
+              </div>
+
+              {/* Right Column - Features */}
+              <div className="col-span-1 md:col-span-5 grid grid-cols-1 gap-6">
+                <GlassCard title="Modus Operandi" icon={Activity} accentColor="green">
+                  <ul className="space-y-4">
+                    {[
+                      { title: "Sinergia Criminal", desc: "Operación simultánea de múltiples mercados ilegales." },
+                      { title: "Reclutamiento", desc: "Explotación de pobreza, exclusión y juventud vulnerable." },
+                      { title: "Control Carcelario", desc: "Prisiones como centros de mando (PCC, Tren de Aragua)." }
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors group/item cursor-default">
+                        <div className="mt-1 w-2 h-2 rounded-full bg-green-400 group-hover/item:shadow-[0_0_10px_rgba(74,222,128,0.6)] transition-shadow"></div>
+                        <div>
+                          <h5 className="text-sm font-bold text-white">{item.title}</h5>
+                          <p className="text-xs text-white/60 leading-relaxed">{item.desc}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </GlassCard>
+
+                <GlassCard title="Impacto Estructural" icon={DollarSign} accentColor="gold" className="flex-grow">
+                  <div className="grid grid-cols-2 gap-4 text-center h-full content-center">
+                     <div className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-yellow-500/30 transition-colors">
+                       <div className="text-yellow-400 mb-2 flex justify-center"><AlertTriangle size={24}/></div>
+                       <p className="text-sm font-bold text-white">Estados Paralelos</p>
+                       <p className="text-[10px] text-white/50 mt-1">Gobernanza criminal en territorios</p>
+                     </div>
+                     <div className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-yellow-500/30 transition-colors">
+                       <div className="text-yellow-400 mb-2 flex justify-center"><Lock size={24}/></div>
+                       <p className="text-sm font-bold text-white">Corrupción</p>
+                       <p className="text-[10px] text-white/50 mt-1">Debilitamiento institucional sistémico</p>
+                     </div>
+                  </div>
+                </GlassCard>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'markets' && (
+            <>
+              <div className="col-span-1 md:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                 {/* New Markets Section */}
+                 <GlassCard title="Minería & Recursos" subtitle="La Nueva Fiebre del Oro" icon={Leaf} accentColor="green" className="col-span-1 md:col-span-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="col-span-2 space-y-4">
+                        <p className="text-sm text-white/80 leading-relaxed">
+                          La minería ilegal (oro), la tala y la pesca irregular se han convertido en los mercados más lucrativos, superando en ocasiones al narcotráfico en ciertas regiones.
+                        </p>
+                        <div className="grid grid-cols-2 gap-3">
+                           {['Contaminación Mercurio', 'Deforestación Masiva', 'Riesgo Biodiversidad', 'Seguridad Alimentaria'].map(tag => (
+                             <span key={tag} className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-300 text-xs font-medium text-center">
+                               {tag}
+                             </span>
+                           ))}
+                        </div>
+                      </div>
+                      <div className="relative h-40 bg-gradient-to-br from-emerald-900/40 to-black/40 rounded-2xl border border-emerald-500/20 p-4 flex flex-col justify-center items-center">
+                         <Droplets size={32} className="text-emerald-400 mb-2 animate-bounce" />
+                         <span className="text-2xl font-bold text-white">Oro &gt; Coca</span>
+                         <span className="text-[10px] text-white/50 mt-1 uppercase tracking-widest">Rentabilidad relativa</span>
+                      </div>
+                    </div>
+                 </GlassCard>
+
+                 {/* Human Trafficking */}
+                 <GlassCard title="Crisis Humanitaria" subtitle="Tráfico y Trata" icon={Users} accentColor="purple" className="col-span-1 md:col-span-2">
+                    <div className="flex flex-col md:flex-row gap-8 items-center">
+                       <div className="w-full md:w-1/3 flex flex-col items-center">
+                          <div className="w-40 h-40 relative">
+                            <ResponsiveContainer>
+                              <PieChart>
+                                <Pie data={dataVictims} innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value">
+                                  {dataVictims.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                                  ))}
+                                </Pie>
+                                <Tooltip contentStyle={{borderRadius: '12px', background: '#000'}} />
+                              </PieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="text-center">
+                                <span className="text-3xl font-bold text-white">79%</span>
+                                <p className="text-[10px] text-white/50 uppercase">Son Mujeres</p>
+                              </div>
+                            </div>
+                          </div>
+                       </div>
+                       <div className="w-full md:w-2/3 space-y-4">
+                          <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                            <h4 className="text-purple-300 font-bold text-sm mb-1">Rutas Críticas</h4>
+                            <p className="text-white/70 text-xs">El Darién, Rutas hacia el Sur, Frontera Norte.</p>
+                          </div>
+                          <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                            <h4 className="text-blue-300 font-bold text-sm mb-1">Actores</h4>
+                            <p className="text-white/70 text-xs">Tren de Aragua, Clan del Golfo (Control logístico total).</p>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-white/40 italic">
+                             <ArrowRight size={12} /> Evolución de Tráfico (movimiento) a Trata (explotación).
+                          </div>
+                       </div>
+                    </div>
+                 </GlassCard>
+              </div>
+
+              <div className="col-span-1 md:col-span-4 flex flex-col gap-6">
+                 <GlassCard title="Amenazas Emergentes" icon={Anchor} accentColor="blue" className="h-full">
+                    <div className="grid grid-cols-1 gap-4">
+                      {[
+                        { label: 'Pesca Ilegal', val: 'Alto Impacto', color: 'bg-blue-500' },
+                        { label: 'Tala Ilegal', val: 'Amazonía', color: 'bg-green-500' },
+                        { label: 'Ganadería Ilegal', val: 'Lavado', color: 'bg-yellow-600' },
+                        { label: 'Crímenes Financieros', val: 'Global', color: 'bg-purple-500' },
+                      ].map((item, i) => (
+                        <div key={i} className="relative overflow-hidden h-24 rounded-2xl bg-black/20 border border-white/5 p-4 group hover:bg-white/5 transition-colors">
+                           <div className={`absolute top-0 right-0 w-16 h-16 ${item.color} blur-[40px] opacity-40 group-hover:opacity-60 transition-opacity`}></div>
+                           <h3 className="text-lg font-bold text-white relative z-10">{item.label}</h3>
+                           <span className="inline-block mt-2 px-2 py-1 rounded text-[10px] bg-white/10 text-white/80 border border-white/10 relative z-10">
+                             {item.val}
+                           </span>
+                        </div>
+                      ))}
+                    </div>
+                 </GlassCard>
+              </div>
+            </>
+          )}
+
+        </div>
+      </div>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Space+Grotesk:wght@400;700&display=swap');
+        
+        .font-sans { font-family: 'Inter', sans-serif; }
+        .font-display { font-family: 'Space Grotesk', sans-serif; }
+        
+        @keyframes blob {
+          0% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+          100% { transform: translate(0px, 0px) scale(1); }
         }
-
-        // --- Función para Acordeón (sin cambios) ---
-        function toggleAccordion(buttonElement) {
-            const item = buttonElement.closest('.accordion-item');
-            if (item) {
-                item.classList.toggle('expanded');
-            }
+        .animate-blob {
+          animation: blob 7s infinite;
         }
-
-        // --- Carga de Íconos y Pestaña por Defecto ---
-        window.onload = function() {
-            lucide.createIcons();
-            
-            // Mostrar la primera pestaña (Temario) por defecto
-            showTab('temario');
-        };
-    </script>
-</body>
-</html>
-
+        .animate-bounce-slow {
+           animation: blob 10s infinite reverse;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+          width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+          background: #050511; 
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #334155; 
+          border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #475569; 
+        }
+      `}</style>
+    </div>
+  );
+}
